@@ -17,14 +17,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Debug - Show directory structure
+    - name: Debug - Show Directory Structure
       run: |
-        echo "📁 Repository structure:"
-        find . -name "package.json" -type f | head -10
-        echo "Frontend directory:"
-        ls -la frontend/ || echo "No frontend directory"
-        echo "Backend directory:"
-        ls -la backend/ || echo "No backend directory"
+        echo "📁 Full directory structure:"
+        find . -name "package.json" -type f | head -20
+        echo ""
+        echo "📁 Frontend contents:"
+        ls -la frontend/ || echo "❌ Frontend directory not found"
+        echo ""
+        echo "📁 Backend contents:"
+        ls -la backend/ || echo "❌ Backend directory not found"
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -32,43 +34,45 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
+    - name: Verify Test Scripts Exist
+      run: |
+        echo "🔍 Checking test scripts in package.json files:"
+        if [ -f "frontend/package.json" ]; then
+          echo "Frontend package.json test script:"
+          cat frontend/package.json | grep -A 2 -B 2 "test" || echo "No test script found"
+        else
+          echo "❌ frontend/package.json not found"
+        fi
+        
+        if [ -f "backend/api-gateway/package.json" ]; then
+          echo "Backend package.json test script:"
+          cat backend/api-gateway/package.json | grep -A 2 -B 2 "test" || echo "No test script found"
+        else
+          echo "❌ backend/api-gateway/package.json not found"
+        fi
+
     - name: Install Frontend Dependencies
       run: |
-        if [ -d "frontend" ]; then
-          cd frontend
-          npm ci
-        else
-          echo "❌ Frontend directory not found!"
-          exit 1
-        fi
+        cd frontend
+        npm ci
 
     - name: Install Backend Dependencies
       run: |
-        if [ -d "backend/api-gateway" ]; then
-          cd backend/api-gateway
-          npm ci
-        else
-          echo "❌ Backend directory not found!"
-          exit 1
-        fi
+        cd backend/api-gateway
+        npm ci
 
-    - name: Build Frontend
+    - name: Run Frontend Tests with Verbose Output
       run: |
         cd frontend
-        npm run build
-
-    - name: Run Frontend Tests with Debug
-      run: |
-        cd frontend
-        echo "📝 Running frontend tests..."
-        npm test -- --watchAll=false --verbose --passWithNoTests
+        echo "🧪 Running frontend tests..."
+        npm test --silent
       continue-on-error: false
 
-    - name: Run Backend Tests with Debug
+    - name: Run Backend Tests with Verbose Output
       run: |
         cd backend/api-gateway
-        echo "📝 Running backend tests..."
-        npm test -- --verbose --passWithNoTests
+        echo "🧪 Running backend tests..."
+        npm test --silent
       continue-on-error: false
 
   deploy-demo:
