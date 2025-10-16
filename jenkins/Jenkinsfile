@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-username/pipeops.git'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'docker build -t pipeops-frontend:latest ./frontend'
+                sh 'docker build -t pipeops-backend:latest ./backend/api-gateway'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh 'docker run pipeops-frontend:latest npm test'
+                sh 'docker run pipeops-backend:latest npm test'
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh 'kubectl apply -f kubernetes/'
+                sh 'kubectl rollout status deployment/pipeops-frontend'
+                sh 'kubectl rollout status deployment/pipeops-backend'
+            }
+        }
+    }
+    
+    post {
+        success {
+            slackSend channel: '#devops', message: 'PipeOps deployment successful!'
+        }
+        failure {
+            slackSend channel: '#devops', message: 'PipeOps deployment failed!'
+        }
+    }
+}

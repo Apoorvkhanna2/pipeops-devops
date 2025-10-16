@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipeops-backend
+  labels:
+    app: pipeops-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pipeops-backend
+  template:
+    metadata:
+      labels:
+        app: pipeops-backend
+    spec:
+      containers:
+      - name: backend
+        image: pipeops-backend:latest
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipeops-backend-service
+spec:
+  selector:
+    app: pipeops-backend
+  ports:
+  - port: 5000
+    targetPort: 5000
